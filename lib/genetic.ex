@@ -16,6 +16,9 @@ defmodule Genetic do
     |> evolve(problem, 0, opts)
   end
 
+  ## Helpers
+
+  # Recursively creates new populations through selection, crossover, mutation, and reinsertion.
   defp evolve(population, problem, generation, opts) do
     population = evaluate(population, &problem.fitness_function/1, opts)
     best = Enum.at(population, 0)
@@ -33,6 +36,7 @@ defmodule Genetic do
     end
   end
 
+  # Sets up the initial population.
   defp initialize(problem, opts) do
     case Keyword.fetch(opts, :initial_population) do
       {:ok, genotypes} ->
@@ -47,6 +51,7 @@ defmodule Genetic do
     end
   end
 
+  # Sorts the population by fitness.
   defp evaluate(population, fitness_function, _opts) do
     population
     |> Enum.map(fn c ->
@@ -55,6 +60,7 @@ defmodule Genetic do
     |> Enum.sort({:desc, Chromosome})
   end
 
+  # Splits the population into parents and leftovers.
   defp select(population, opts) do
     fun = Keyword.get(opts, :selection_type, &SelectionStrategy.natural/3)
     rate = Keyword.get(opts, :selection_rate, 0.8)
@@ -70,6 +76,7 @@ defmodule Genetic do
     {parents, MapSet.to_list(leftover)}
   end
 
+  # The parents produce offspring.
   defp crossover(parents, opts) do
     fun = Keyword.get(opts, :crossover_type, &CrossoverStrategy.uniform/3)
 
@@ -81,6 +88,7 @@ defmodule Genetic do
     end)
   end
 
+  # Random members of the population are mutated.
   defp mutation(population, opts) do
     fun = Keyword.get(opts, :mutation_type, &MutationStrategy.scramble/2)
     rate = Keyword.get(opts, :mutation_rate, 0.05)
@@ -91,6 +99,7 @@ defmodule Genetic do
     |> Enum.map(&fun.(&1, opts))
   end
 
+  # Creates a new population.
   defp reinsertion(parents, offspring, leftover, opts) do
     fun = Keyword.get(opts, :reinsertion_type, &ReinsertionStrategy.elitist/4)
     fun.(parents, offspring, leftover, opts)
