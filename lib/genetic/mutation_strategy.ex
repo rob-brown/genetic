@@ -19,14 +19,14 @@ defmodule Genetic.MutationStrategy do
         end
       end)
 
-    %Chromosome{c | genes: genes, age: c.age + 1}
+    %Chromosome{c | genes: genes, age: c.age + 1, fitness: 0}
   end
 
   @doc """
   Shuffles all the genes in the chromosome. Works with binary, permutation, and some real-value genotypes.
   """
   def scramble(c = %Chromosome{}, _opts) do
-    %Chromosome{c | genes: Enum.shuffle(c.genes), age: c.age + 1}
+    %Chromosome{c | genes: Enum.shuffle(c.genes), age: c.age + 1, fitness: 0}
   end
 
   @doc """
@@ -45,7 +45,7 @@ defmodule Genetic.MutationStrategy do
       tail = Enum.slice(c.genes, hi, c.size)
       genes = head ++ Enum.shuffle(mid) ++ tail
 
-      %Chromosome{c | genes: genes, age: c.age + 1}
+      %Chromosome{c | genes: genes, age: c.age + 1, fitness: 0}
     end
   end
 
@@ -63,6 +63,6 @@ defmodule Genetic.MutationStrategy do
 
     genes = Enum.map(c.genes, fn _ -> :rand.normal(mu, sigma) end)
 
-    %Chromosome{c | genes: genes, age: c.age + 1}
+    %Chromosome{c | genes: genes, age: c.age + 1, fitness: 0}
   end
 end

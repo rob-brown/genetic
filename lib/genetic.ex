@@ -9,9 +9,9 @@ defmodule Genetic do
     ReinsertionStrategy
   }
 
-  @spec run(Genetic.Problem.t(), Keyword.t()) :: Chromosome.t()
+  @spec run(Genetic.Problem.t(), Keyword.t()) :: [Chromosome.t()]
   def run(problem, opts \\ []) do
-    (&problem.genotype/0)
+    problem
     |> initialize(opts)
     |> evolve(problem, 0, opts)
   end
@@ -22,7 +22,7 @@ defmodule Genetic do
     IO.puts("Current best: #{inspect(best)}")
 
     if problem.terminate?(population, generation) do
-      best
+      population
     else
       {parents, leftover} = select(population, opts)
       children = crossover(parents, opts)
@@ -33,11 +33,17 @@ defmodule Genetic do
     end
   end
 
-  defp initialize(genotype, opts) do
-    n = Keyword.get(opts, :population_size, 100)
+  defp initialize(problem, opts) do
+    case Keyword.fetch(opts, :initial_population) do
+      {:ok, genotypes} ->
+        genotypes
 
-    for _ <- 1..n do
-      genotype.()
+      :error ->
+        n = Keyword.get(opts, :population_size, 100)
+
+        for _ <- 1..n do
+          problem.genotype()
+        end
     end
   end
 
@@ -46,7 +52,7 @@ defmodule Genetic do
     |> Enum.map(fn c ->
       %Chromosome{c | fitness: fitness_function.(c)}
     end)
-    |> Enum.sort_by(& &1.fitness, &>=/2)
+    |> Enum.sort({:desc, Chromosome})
   end
 
   defp select(population, opts) do
@@ -86,7 +92,7 @@ defmodule Genetic do
   end
 
   defp reinsertion(parents, offspring, leftover, opts) do
-    fun = Keyword.get(opts, :reinsertion_strategy, &ReinsertionStrategy.elitist/4)
+    fun = Keyword.get(opts, :reinsertion_type, &ReinsertionStrategy.elitist/4)
     fun.(parents, offspring, leftover, opts)
   end
 end

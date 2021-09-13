@@ -1,4 +1,6 @@
 defmodule Genetic.ReinsertionStrategy do
+  alias Genetic.Chromosome
+
   @doc """
   A fast reinsertion strategy that could potentially eliminate some strong characteristics from the population.
   """
@@ -16,7 +18,7 @@ defmodule Genetic.ReinsertionStrategy do
 
     survivors =
       old
-      |> Enum.sort_by(& &1.fitness, &>=/2)
+      |> Enum.sort({:desc, Chromosome})
       |> Enum.take(n)
 
     offspring ++ survivors
