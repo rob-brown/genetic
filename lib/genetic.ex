@@ -20,7 +20,7 @@ defmodule Genetic do
 
   # Recursively creates new populations through selection, crossover, mutation, and reinsertion.
   defp evolve(population, problem, generation, opts) do
-    population = evaluate(population, &problem.fitness_function/1, opts)
+    population = evaluate(population, problem, opts)
     best = Enum.at(population, 0)
     IO.puts("Current best: #{inspect(best)}")
 
@@ -31,7 +31,7 @@ defmodule Genetic do
       children = crossover(parents, opts)
       mutants = mutation(population, opts)
       offspring = children ++ mutants
-      new_population = reinsertion(parents, offspring, leftover, opts)
+      new_population = reinsertion(parents, offspring, leftover, problem.fitness_module(), opts)
       evolve(new_population, problem, generation + 1, opts)
     end
   end
@@ -52,20 +52,26 @@ defmodule Genetic do
   end
 
   # Sorts the population by fitness.
-  defp evaluate(population, fitness_function, _opts) do
+  defp evaluate(population, problem, _opts) do
     population
-    |> Enum.map(fn c ->
-      %Chromosome{c | fitness: fitness_function.(c)}
-    end)
-    |> Enum.sort({:desc, Chromosome})
+    |> Enum.map(&problem.update_fitness/1)
+    |> Enum.sort({:desc, problem.fitness_module()})
   end
 
   # Splits the population into parents and leftovers.
   defp select(population, opts) do
     fun = Keyword.get(opts, :selection_type, &SelectionStrategy.natural/3)
-    rate = Keyword.get(opts, :selection_rate, 0.8)
-    n = trunc(round(Enum.count(population) * rate))
-    n = if Integer.is_even(n), do: n, else: n + 1
+    count = Keyword.get(opts, :selection_count, nil)
+
+    n =
+      if count do
+        count
+      else
+        rate = Keyword.get(opts, :selection_rate, 0.8)
+        n = trunc(round(Enum.count(population) * rate))
+        if Integer.is_even(n), do: n, else: n + 1
+      end
+
     parents = fun.(population, n, opts)
 
     leftover =
@@ -91,8 +97,15 @@ defmodule Genetic do
   # Random members of the population are mutated.
   defp mutation(population, opts) do
     fun = Keyword.get(opts, :mutation_type, &MutationStrategy.scramble/2)
-    rate = Keyword.get(opts, :mutation_rate, 0.05)
-    n = trunc(Enum.count(population) * rate)
+    count = Keyword.get(opts, :mutation_count, nil)
+
+    n =
+      if count do
+        count
+      else
+        rate = Keyword.get(opts, :mutation_rate, 0.05)
+        trunc(Enum.count(population) * rate)
+      end
 
     population
     |> Enum.take_random(n)
@@ -100,8 +113,8 @@ defmodule Genetic do
   end
 
   # Creates a new population.
-  defp reinsertion(parents, offspring, leftover, opts) do
-    fun = Keyword.get(opts, :reinsertion_type, &ReinsertionStrategy.elitist/4)
-    fun.(parents, offspring, leftover, opts)
+  defp reinsertion(parents, offspring, leftover, fitness_module, opts) do
+    fun = Keyword.get(opts, :reinsertion_type, &ReinsertionStrategy.elitist/5)
+    fun.(parents, offspring, leftover, fitness_module, opts)
   end
 end

@@ -1,16 +1,27 @@
+#! /usr/bin/env elixir
+
+Mix.install([
+  {:genetic, path: Path.join(__DIR__, "..")}
+])
+
 defmodule OneMax do
-  alias Genetic.{Problem, Chromosome}
+  alias Genetic.{Problem, BasicChromosome}
   @behaviour Problem
 
   @impl Problem
   def genotype() do
     genes = for _ <- 1..42, do: Enum.random(0..1)
-    Chromosome.new(genes)
+    BasicChromosome.new(genes)
   end
 
   @impl Problem
-  def fitness_function(chromosome) do
-    Enum.sum(chromosome.genes)
+  def update_fitness(c) do
+    %BasicChromosome{c | fitness: Enum.sum(c.genes)}
+  end
+
+  @impl Problem
+  def fitness_module() do
+    BasicChromosome
   end
 
   @impl Problem
@@ -19,4 +30,8 @@ defmodule OneMax do
   end
 end
 
-OneMax |> Genetic.run() |> IO.inspect(label: "Result")
+options = [
+  mutation_type: &Genetic.MutationStrategy.flip/2
+]
+
+OneMax |> Genetic.run(options) |> Enum.at(0) |> IO.inspect(label: "Result")

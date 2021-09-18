@@ -16,26 +16,23 @@ defmodule Genetic.CrossoverStrategy do
       |> List.to_tuple()
 
     # p2 contribution
-    slice1 = Enum.slice(p1.genes, i1..i2)
+    slice1 = p1 |> Chromosome.genes() |> Enum.slice(i1..i2)
     slice1_set = MapSet.new(slice1)
-    p2_contrib = Enum.reject(p2.genes, &MapSet.member?(slice1_set, &1))
+    p2_contrib = p2 |> Chromosome.genes() |> Enum.reject(&MapSet.member?(slice1_set, &1))
     {head1, tail1} = Enum.split(p2_contrib, i1)
 
     # p1 contribution
-    slice2 = Enum.slice(p2.genes, i1..i2)
+    slice2 = p2 |> Chromosome.genes() |> Enum.slice(i1..i2)
     slice2_set = MapSet.new(slice2)
-    p1_contrib = Enum.reject(p1.genes, &MapSet.member?(slice2_set, &1))
+    p1_contrib = p1 |> Chromosome.genes() |> Enum.reject(&MapSet.member?(slice2_set, &1))
     {head2, tail2} = Enum.split(p1_contrib, i1)
 
     # Make and return
     c1 = head1 ++ slice1 ++ tail1
     c2 = head2 ++ slice2 ++ tail2
-    age = max(p1.age, p2.age) + 1
+    age = max(Chromosome.age(p1), Chromosome.age(p2)) + 1
 
-    {
-      %Chromosome{genes: c1, size: p1.size, age: age},
-      %Chromosome{genes: c2, size: p2.size, age: age}
-    }
+    {Chromosome.spawn(p1, c1, age), Chromosome.spawn(p2, c2, age)}
   end
 
   @doc """
@@ -43,16 +40,13 @@ defmodule Genetic.CrossoverStrategy do
   """
   def single_point(p1, p2, _opts) do
     cx_point = :rand.uniform(p1.size)
-    {p1_head, p1_tail} = Enum.split(p1.genes, cx_point)
-    {p2_head, p2_tail} = Enum.split(p2.genes, cx_point)
+    {p1_head, p1_tail} = p1 |> Chromosome.genes() |> Enum.split(cx_point)
+    {p2_head, p2_tail} = p2 |> Chromosome.genes() |> Enum.split(cx_point)
     c1 = p1_head ++ p2_tail
     c2 = p2_head ++ p1_tail
-    age = max(p1.age, p2.age) + 1
+    age = max(Chromosome.age(p1), Chromosome.age(p2)) + 1
 
-    {
-      %Chromosome{genes: c1, size: p1.size, age: age},
-      %Chromosome{genes: c2, size: p2.size, age: age}
-    }
+    {Chromosome.spawn(p1, c1, age), Chromosome.spawn(p2, c2, age)}
   end
 
   @doc """
@@ -60,10 +54,10 @@ defmodule Genetic.CrossoverStrategy do
   """
   def uniform(p1, p2, opts) do
     rate = Keyword.get(opts, :crossover_rate, 0.5)
-    age = max(p1.age, p2.age) + 1
+    age = max(Chromosome.age(p1), Chromosome.age(p2)) + 1
 
     {c1, c2} =
-      Enum.zip(p1.genes, p2.genes)
+      Enum.zip(Chromosome.genes(p1), Chromosome.genes(p2))
       |> Enum.map(fn {x, y} ->
         if :rand.uniform() < rate do
           {x, y}
@@ -73,10 +67,7 @@ defmodule Genetic.CrossoverStrategy do
       end)
       |> Enum.unzip()
 
-    {
-      %Chromosome{genes: c1, size: p1.size, age: age},
-      %Chromosome{genes: c2, size: p2.size, age: age}
-    }
+    {Chromosome.spawn(p1, c1, age), Chromosome.spawn(p2, c2, age)}
   end
 
   @doc """
@@ -84,17 +75,15 @@ defmodule Genetic.CrossoverStrategy do
   """
   def whole_arithmetic(p1, p2, opts) do
     alpha = Keyword.get(opts, :alpha, 0.5)
-    age = max(p1.age, p2.age) + 1
+    age = max(Chromosome.age(p1), Chromosome.age(p2)) + 1
 
     {c1, c2} =
-      p1.genes
-      |> Enum.zip(p2.genes)
+      p1
+      |> Chromosome.genes()
+      |> Enum.zip(Chromosome.genes(p2))
       |> Enum.map(fn {x, y} -> {x * alpha + y * (1 - alpha), x * (1 - alpha) + y * alpha} end)
       |> Enum.unzip()
 
-    {
-      %Chromosome{genes: c1, size: p1.size, age: age},
-      %Chromosome{genes: c2, size: p1.size, age: age}
-    }
+    {Chromosome.spawn(p1, c1, age), Chromosome.spawn(p2, c2, age)}
   end
 end
