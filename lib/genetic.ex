@@ -107,9 +107,19 @@ defmodule Genetic do
         trunc(Enum.count(population) * rate)
       end
 
-    population
-    |> Enum.take_random(n)
-    |> Enum.map(&fun.(&1, opts))
+    if n > Enum.count(population) do
+      # Special case when you want to use mutation to increase population size.
+      for _ <- 1..n do
+        population
+        |> Enum.random()
+        |> fun.(opts)
+      end
+    else
+      # Otherwise, take a distinct, random selection from the population.
+      population
+      |> Enum.take_random(n)
+      |> Enum.map(&fun.(&1, opts))
+    end
   end
 
   # Creates a new population.
