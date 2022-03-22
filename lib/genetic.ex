@@ -86,12 +86,14 @@ defmodule Genetic do
   defp crossover(parents, opts) do
     fun = Keyword.get(opts, :crossover_type, &CrossoverStrategy.uniform/3)
 
-    parents
-    |> Enum.chunk_every(2)
-    |> Enum.reduce([], fn [p1, p2], acc ->
+    # Ensure each pairing has two parents.
+    pairings = Enum.chunk_every(parents, 2, 2, Enum.take(parents, 1))
+
+    for [p1, p2] <- pairings do
       {c1, c2} = fun.(p1, p2, opts)
-      [c1, c2 | acc]
-    end)
+      [c1, c2]
+    end
+    |> List.flatten()
   end
 
   # Random members of the population are mutated.
