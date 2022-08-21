@@ -21,8 +21,11 @@ defmodule Genetic do
   # Recursively creates new populations through selection, crossover, mutation, and reinsertion.
   defp evolve(population, problem, generation, opts) do
     population = evaluate(population, problem, opts)
-    best = Enum.at(population, 0)
-    IO.puts("Current best: #{inspect(best)}")
+
+    if Keyword.get(opts, :print_best, false) do
+      best = Enum.at(population, 0)
+      IO.puts("Current best: #{inspect(best)}")
+    end
 
     if problem.terminate?(population, generation) do
       population
