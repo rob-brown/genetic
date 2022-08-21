@@ -1,7 +1,7 @@
 defmodule Genetic.MutationStrategy do
   alias Genetic.Chromosome
 
-  # TODO: Implement swap, uniform, and invert strategies.
+  # TODO: Implement uniform and invert strategies.
 
   @doc """
   A mutation strategy for binary genotypes. Do NOT use on other genotypes. Flips 0 to 1 and vice versa. Setting `:flip_rate` in `opts` changes the probability of flipping a bit. Default is 0.5 (50%).
@@ -21,6 +21,20 @@ defmodule Genetic.MutationStrategy do
       end)
 
     Chromosome.spawn(c, genes, Chromosome.age(c) + 1)
+  end
+
+  @doc """
+  A mutation strategy that swaps two genotypes. Safe for permutations.
+  """
+  def swap(c, _opts) do
+    genes = Chromosome.genes(c)
+    count = Enum.count(genes)
+    [i1, i2] = Enum.take_random(0..(count - 1), 2)
+    g1 = Enum.at(genes, i1)
+    g2 = Enum.at(genes, i2)
+    new_genes = genes |> List.replace_at(i1, g2) |> List.replace_at(i2, g1)
+    age = Chromosome.age(c) + 1
+    Chromosome.spawn(c, new_genes, age)
   end
 
   @doc """
