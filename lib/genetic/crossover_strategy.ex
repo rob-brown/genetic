@@ -7,7 +7,7 @@ defmodule Genetic.CrossoverStrategy do
   A crossover strategy that keeps the integrity of permutations. Do NOT use on non-permutations.
   """
   def order_one(p1, p2, _opts) do
-    limit = p1.size - 1
+    limit = Chromosome.gene_count(p1) - 1
 
     # Get random range
     {i1, i2} =
